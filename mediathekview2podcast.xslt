@@ -12,9 +12,10 @@
 			    <language>de-DE</language>
 
 			    <xsl:variable name="today" select="translate(substring-before(date:date-time(), 'T'), '-', '')"/>
+			    <xsl:variable name="minDate" select="translate(substring-before(date:add(date:date-time(), '-P1M'), 'T'), '-', '')" />
 
-				<!-- Iterate over Downlads (sic!) that are not in the future. Podcast items with future dates are likely to cause problem in podcasting apps, e.g. the iOS Podcasts. Also, limit to items published in this year-->
-				<xsl:for-each select="Mediathek/Downlad[concat(substring-after(substring-after(Datum, '.'), '.'),substring-before(substring-after(Datum, '.'),'.'),substring-before(Datum, '.')) &lt;= $today and date:year() = substring-after(substring-after(Datum, '.'), '.')]">
+				<!-- Iterate over Downlads (sic!) that are not in the future. Podcast items with future dates are likely to cause problem in podcasting apps, e.g. the iOS Podcast app. Also, limit to items published within the last month-->
+				<xsl:for-each select="Mediathek/Downlad[concat(substring-after(substring-after(Datum, '.'), '.'),substring-before(substring-after(Datum, '.'),'.'),substring-before(Datum, '.')) &lt;= $today and concat(substring-after(substring-after(Datum, '.'), '.'),substring-before(substring-after(Datum, '.'),'.'),substring-before(Datum, '.')) &gt; $minDate]">
 
 				 	<!-- Produce a ISO 8601 date format with built in XSLT 1.0 capabilities -->
 					<xsl:variable name="isoDate" select="concat(substring-after(substring-after(Datum, '.'), '.'),'-',substring-before(substring-after(Datum, '.'),'.'),'-',substring-before(Datum, '.'))" />
@@ -51,17 +52,11 @@
 						    <xsl:otherwise/>
 						</xsl:choose>
 						</xsl:variable>
-
-						<!-- If not defined otherwise, fall back to the current time -->
-						<xsl:variable name="time">
-							<xsl:choose>
-								<xsl:when test="Zeit"><xsl:value-of select="concat(Zeit,'+01:00')"/></xsl:when>
-								<xsl:otherwise><xsl:value-of select="date:time()" /></xsl:otherwise>
-							</xsl:choose>
-						</xsl:variable>
-
-				      <pubDate>Thu, <xsl:value-of select="concat($day, ' ', $monthName, ' ', $year)"/>&#160;<xsl:value-of select="$time"/></pubDate>
-				      <dc:date><xsl:value-of select="$isoDate" />T<xsl:value-of select="$time"/></dc:date>
+						
+				      <!--<pubDate>Thu, <xsl:value-of select="concat($day, ' ', $monthName, ' ', $year)"/>&#160;<xsl:value-of select="date:time()"/></pubDate>-->
+				      <!-- iOS Podcast app will not show new podcasts with an older date. Use current timestamp here -->
+				      <pubDate><xsl:value-of select="substring(date:day-name(), 1, 3)"/>, <xsl:value-of select="date:day-in-month()"/>&#160;<xsl:value-of select="substring(date:month-name(), 1, 3)"/>&#160;<xsl:value-of select="date:year()"/>&#160;<xsl:value-of select="date:time()"/></pubDate>
+				      <dc:date><xsl:value-of select="$isoDate" />T<xsl:value-of select="date:time()"/></dc:date>
 
 				      <guid isPermaLink="true"><xsl:value-of select="Film-URL" /></guid>
 				      <itunes:author><xsl:value-of select="Sender" /> </itunes:author>
